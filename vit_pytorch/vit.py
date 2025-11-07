@@ -48,9 +48,9 @@ class Attention(nn.Module):
         ) if project_out else nn.Identity()
 
     def forward(self, x):
-        x = self.norm(x)
-
-        qkv = self.to_qkv(x).chunk(3, dim = -1)
+        x = self.norm(x) # x = [b, n, d]
+        # 线性层内部计算时，[b*n, d] -> [b*n, 3*d]，再转为[b, n, 3 * inner_dim]
+        qkv = self.to_qkv(x).chunk(3, dim = -1) # qkv = [b, n, 3 * inner_dim] -> 3 x [b, n, inner_dim] chunk返回元组
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
 
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
